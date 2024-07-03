@@ -1,25 +1,63 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import Login from './components/Login';
+import UserList from './components/UserList';
+import Register from './components/Register';
+import Admin from './components/Admin';
 
-function App() {
+const App = () => {
+  const auth = useSelector((state) => state.auth);
+  const { isAuthenticated, role } = auth;
+
+  console.log('Is Authenticated:', isAuthenticated);
+  console.log('User Role:', role);
+
+  const ProtectedRoute = ({ children, allowedRole }) => {
+    if (!isAuthenticated) {
+      return <Navigate to="/login" />;
+    }
+    if (allowedRole && role !== allowedRole) {
+      return <Navigate to="/" />;
+    }
+    return children;
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route 
+          path="/" 
+          element={
+            isAuthenticated 
+              ? (role === 'admin' ? <Navigate to="/admin" /> : <Navigate to="/list" />)
+              : <Navigate to="/login" />
+          } 
+        />
+        <Route path="/register" element={<Register />} />
+        <Route 
+          path="/list" 
+          element={
+            <ProtectedRoute>
+              <UserList />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute allowedRole="admin">
+              <Admin />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/login" 
+          element={isAuthenticated ? <Navigate to="/" /> : <Login />} 
+        />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
